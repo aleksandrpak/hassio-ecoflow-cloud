@@ -35,7 +35,9 @@ class EcoflowPublicApiClient(EcoflowApiClient):
         _LOGGER.info("Requesting IoT MQTT credentials")
         response = await self.call_api("/certification")
         self._accept_mqqt_certification(response)
-        self.mqtt_info.client_id = f"Hassio-{self.mqtt_info.username}-{self.group.replace(' ', '-')}"
+        self.mqtt_info.client_id = (
+            f"Hassio-{self.mqtt_info.username}-{self.group.replace(' ', '-')}"
+        )
 
     async def fetch_all_available_devices(self) -> list[EcoflowDeviceInfo]:
         _LOGGER.info("Requesting all devices")
@@ -46,30 +48,52 @@ class EcoflowPublicApiClient(EcoflowApiClient):
             sn = device["sn"]
             product_name = device.get("productName", "undefined")
             if product_name == "undefined":
-                from ..devices.registry import device_by_product
+                from ..devices.registry import device_by_product, device_by_sn
 
-                device_list = list(device_by_product.keys())
-                for devicetype in device_list:
-                    if "deviceName" in device and device["deviceName"].lower().startswith(devicetype.lower()):
-                        product_name = devicetype
+                for sn_prefix, product in device_by_sn.items():
+                    if sn.startswith(sn_prefix):
+                        product_name = product
+                        _LOGGER.info(
+                            f"Identified device {sn} as {product_name} by serial number prefix"
+                        )
+                        break
+
+                if product_name == "undefined":
+                    device_list = list(device_by_product.keys())
+                    for devicetype in device_list:
+                        if "deviceName" in device and device[
+                            "deviceName"
+                        ].lower().startswith(devicetype.lower()):
+                            product_name = devicetype
             device_name = device.get("deviceName", f"{product_name}-{sn}")
             status = int(device["online"])
-            result.append(self.__create_device_info(sn, device_name, product_name, status))
+            result.append(
+                self.__create_device_info(sn, device_name, product_name, status)
+            )
 
         return result
 
     def configure_device(self, device_data: DeviceData):
         if device_data.parent is not None:
-            info = self.__create_device_info(device_data.parent.sn, device_data.name, device_data.parent.device_type)
+            info = self.__create_device_info(
+                device_data.parent.sn, device_data.name, device_data.parent.device_type
+            )
         else:
-            info = self.__create_device_info(device_data.sn, device_data.name, device_data.device_type)
+            info = self.__create_device_info(
+                device_data.sn, device_data.name, device_data.device_type
+            )
 
         from custom_components.ecoflow_cloud.devices.registry import device_by_product
 
         if device_data.device_type in device_by_product:
             device = device_by_product[device_data.device_type](info, device_data)
-        elif device_data.parent is not None and device_data.parent.device_type in device_by_product:
-            device = device_by_product[device_data.parent.device_type](info, device_data)
+        elif (
+            device_data.parent is not None
+            and device_data.parent.device_type in device_by_product
+        ):
+            device = device_by_product[device_data.parent.device_type](
+                info, device_data
+            )
         else:
             device = DiagnosticDevice(info, device_data)
 
@@ -84,7 +108,9 @@ class EcoflowPublicApiClient(EcoflowApiClient):
             for device in devices:
                 if device.sn in self.devices:
                     status = device.status == 1
-                    self.devices[device.sn].data.add_data(PreparedData(status, None, None))
+                    self.devices[device.sn].data.add_data(
+                        PreparedData(status, None, None)
+                    )
         else:
             target_devices = [device_sn]
 
@@ -92,12 +118,16 @@ class EcoflowPublicApiClient(EcoflowApiClient):
             try:
                 raw = await self.call_api("/device/quota/all", {"sn": sn})
                 if "data" in raw:
-                    self.devices[sn].data.add_data(PreparedData(None, {"params": raw["data"]}, raw))
+                    self.devices[sn].data.add_data(
+                        PreparedData(None, {"params": raw["data"]}, raw)
+                    )
             except Exception as exception:
                 _LOGGER.error(exception, exc_info=True)
                 _LOGGER.error("Error retrieving %s", sn)
 
-    async def call_api(self, endpoint: str, params: dict[str, str] | None = None) -> dict:
+    async def call_api(
+        self, endpoint: str, params: dict[str, str] | None = None
+    ) -> dict:
         self.nonce = str(random.randint(10000, 1000000))
         self.timestamp = str(int(time.time() * 1000))
         async with aiohttp.ClientSession() as session:
@@ -146,7 +176,9 @@ class EcoflowPublicApiClient(EcoflowApiClient):
         )
 
     def __gen_sign(self, query_params: str | None) -> str:
-        target_str = f"accessKey={self.access_key}&nonce={self.nonce}&timestamp={self.timestamp}"
+        target_str = (
+            f"accessKey={self.access_key}&nonce={self.nonce}&timestamp={self.timestamp}"
+        )
         if query_params:
             target_str = query_params + "&" + target_str
 

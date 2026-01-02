@@ -7,6 +7,7 @@ from custom_components.ecoflow_cloud.devices.internal import (
     delta2 as internal_delta2,
     delta2_max as internal_delta2_max,
     delta3 as internal_delta3,
+    delta3_plus as internal_delta3_plus,
     delta_max as internal_delta_max,
     delta_mini as internal_delta_mini,
     delta_pro as internal_delta_pro,
@@ -28,6 +29,7 @@ from custom_components.ecoflow_cloud.devices.public import (
     delta2 as public_delta2,
     delta2_max as public_delta2_max,
     delta3 as public_delta3,
+    delta3_plus as public_delta3_plus,
     delta_max as public_delta_max,
     delta_pro as public_delta_pro,
     delta_pro_3 as public_delta_pro_3,
@@ -51,6 +53,7 @@ devices: OrderedDict[str, Type[BaseDevice]] = OrderedDict[str, Type[BaseDevice]]
     {
         "DELTA_2": internal_delta2.Delta2,
         "DELTA_3": internal_delta3.Delta3,
+        "DELTA_3_PLUS": internal_delta3_plus.Delta3Plus,
         "RIVER_2": internal_river2.River2,
         "RIVER_2_MAX": internal_river2_max.River2Max,
         "RIVER_2_PRO": internal_river2_pro.River2Pro,
@@ -82,6 +85,7 @@ device_by_product: OrderedDict[str, Type[BaseDevice]] = OrderedDict[str, Type[Ba
         "DELTA 2": public_delta2.Delta2,
         "DELTA 2 Max": public_delta2_max.Delta2Max,
         "DELTA 3": public_delta3.Delta3,
+        "DELTA 3 Plus": public_delta3_plus.Delta3Plus,
         "RIVER 2": public_river2.River2,
         "RIVER 2 Max": public_river2_max.River2Max,
         "RIVER 2 Pro": public_river2_pro.River2Pro,
@@ -99,6 +103,13 @@ device_by_product: OrderedDict[str, Type[BaseDevice]] = OrderedDict[str, Type[Ba
         "Smart Home Panel 2": public_smart_home_panel_2.SmartHomePanel2,
         "Power Ocean": public_powerocean.PowerOcean,
         "Diagnostic": DiagnosticDevice,
+    }
+)
+
+device_by_sn: OrderedDict[str, str] = OrderedDict[str, str](
+    {
+        # Map serial number prefixes to product names for devices that don't report productName
+        "P351": "DELTA 3 Plus",
     }
 )
 
